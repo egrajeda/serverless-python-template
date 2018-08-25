@@ -1,4 +1,4 @@
-service: greeter
+service: chatty
 
 provider:
   name: aws
@@ -9,30 +9,29 @@ package:
   individually: true
 
 functions:
-  hello-world:
-    handler: functions/hello-world/lib/function.main
+  hello:
+    handler: functions/hello/lib/function.main
     environment:
       NAME: ${opt:name, "John Doe"}
     events:
-      - schedule: rate(1 hour)
+      - http: GET hello
     package:
       exclude:
         - ./**
       include:
-        - functions/function-a/lib/function.py
-        - functions/function-a/venv/lib/python3.6/site-packages/**
-  function-b:
-    handler: functions/function-b/lib/function.main
-    environment:
-      NEW_TRANSACTIONS_TOPIC_ARN: arn:aws:sns:${self:custom.config.region}:#{AWS::AccountId}:${self:custom.config.sns.newTransactionsTopic}
+        - functions/hello/lib/function.py
+        - functions/hello/venv/lib/python3.6/site-packages/**
+
+  joke:
+    handler: functions/joke/lib/function.main
     events:
-      - sns: arn:aws:sns:${self:custom.config.region}:#{AWS::AccountId}:${self:custom.config.sns.synchronizeAccountTopic}
+      - http: GET joke
     package:
       exclude:
         - ./**
       include:
-        - functions/function-b/lib/function.py
-        - functions/function-b/venv/lib/python3.6/site-packages/**
+        - functions/joke/lib/function.py
+        - functions/joke/venv/lib/python3.6/site-packages/**
 
 plugins:
   - serverless-plugin-aws-alerts
@@ -46,7 +45,7 @@ custom:
         topic: ${self:service}-${self:custom.config.stage}-alerts
         notifications:
           - protocol: email
-            endpoint: <TODO>
+            endpoint: me@egrajeda.com
     alarms:
       - functionErrors
       - functionThrottles

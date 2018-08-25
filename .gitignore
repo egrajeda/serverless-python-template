@@ -1,0 +1,6 @@
+.idea/
+.serverless/
+venv/
+*.egg-info/
+__pycache__/
+node_modules/
