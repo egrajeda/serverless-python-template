@@ -1,0 +1,55 @@
+service: greeter
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: dev
+
+package:
+  individually: true
+
+functions:
+  hello-world:
+    handler: functions/hello-world/lib/function.main
+    environment:
+      NAME: ${opt:name, "John Doe"}
+    events:
+      - schedule: rate(1 hour)
+    package:
+      exclude:
+        - ./**
+      include:
+        - functions/function-a/lib/function.py
+        - functions/function-a/venv/lib/python3.6/site-packages/**
+  function-b:
+    handler: functions/function-b/lib/function.main
+    environment:
+      NEW_TRANSACTIONS_TOPIC_ARN: arn:aws:sns:${self:custom.config.region}:#{AWS::AccountId}:${self:custom.config.sns.newTransactionsTopic}
+    events:
+      - sns: arn:aws:sns:${self:custom.config.region}:#{AWS::AccountId}:${self:custom.config.sns.synchronizeAccountTopic}
+    package:
+      exclude:
+        - ./**
+      include:
+        - functions/function-b/lib/function.py
+        - functions/function-b/venv/lib/python3.6/site-packages/**
+
+plugins:
+  - serverless-plugin-aws-alerts
+
+custom:
+  alerts:
+    stages:
+      - production
+    topics:
+      alarm:
+        topic: ${self:service}-${self:custom.config.stage}-alerts
+        notifications:
+          - protocol: email
+            endpoint: <TODO>
+    alarms:
+      - functionErrors
+      - functionThrottles
+  config:
+    region: ${opt:region, self:provider.region}
+    stage: ${opt:stage, self:provider.stage}
